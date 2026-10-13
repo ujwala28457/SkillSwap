@@ -9,6 +9,7 @@ import com.myapp.skillswap.entity.Skill;
 import com.myapp.skillswap.entity.SkillType;
 import com.myapp.skillswap.entity.User;
 import com.myapp.skillswap.repository.SkillRepository;
+import com.myapp.skillswap.repository.SwapRequestRepository;
 import com.myapp.skillswap.repository.UserRepository;
 import com.myapp.skillswap.repository.UserSkillRepository;
 import com.myapp.skillswap.service.SkillService;
@@ -39,6 +40,9 @@ class SkillMarketplaceIntegrationTest {
     private WebApplicationContext context;
 
     @Autowired
+    private SwapRequestRepository swapRequestRepository;
+
+    @Autowired
     private UserRepository userRepository;
 
     @Autowired
@@ -59,6 +63,7 @@ class SkillMarketplaceIntegrationTest {
                 .apply(springSecurity())
                 .build();
 
+        swapRequestRepository.deleteAll();
         userSkillRepository.deleteAll();
         skillRepository.deleteAll();
         userRepository.deleteAll();

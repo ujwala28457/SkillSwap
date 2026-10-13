@@ -13,6 +13,12 @@ out/
 .env.test.local
 .env.production.local
 !.env.example
+!frontend/.env.example
+
+### Frontend ###
+frontend/node_modules/
+frontend/dist/
+*.tsbuildinfo
 *.pem
 *.key
 *.p12

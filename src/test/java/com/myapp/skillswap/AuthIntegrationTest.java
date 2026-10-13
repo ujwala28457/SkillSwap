@@ -302,4 +302,52 @@ class AuthIntegrationTest {
                 .andExpect(jsonPath("$[0].email").value("protected@example.com"))
                 .andExpect(jsonPath("$[0].password").doesNotExist());
     }
+
+    @Test
+    void testGetCurrentUserUnauthenticated() throws Exception {
+        mockMvc.perform(get("/api/auth/me"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void testGetCurrentUserAuthenticated() throws Exception {
+        userRepository.save(new User("Test User", "testuser@example.com", passwordEncoder.encode("password123")));
+
+        mockMvc.perform(get("/api/auth/me")
+                        .with(httpBasic("testuser@example.com", "password123")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Test User"))
+                .andExpect(jsonPath("$.email").value("testuser@example.com"))
+                .andExpect(jsonPath("$.password").doesNotExist());
+    }
+
+    @Test
+    void testSessionBasedAuthenticationAfterLogin() throws Exception {
+        userRepository.save(new User("Session User", "session@example.com", passwordEncoder.encode("password123")));
+
+        String loginJson = """
+                {
+                    "email": "session@example.com",
+                    "password": "password123"
+                }
+                """;
+
+        var loginResult = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(loginJson))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        var session = loginResult.getRequest().getSession(false);
+        assertNotNull(session);
+
+        // Access protected /api/auth/me using the session without sending basic auth header
+        mockMvc.perform(get("/api/auth/me").session((org.springframework.mock.web.MockHttpSession) session))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("session@example.com"));
+
+        // Logout
+        mockMvc.perform(post("/api/auth/logout").session((org.springframework.mock.web.MockHttpSession) session))
+                .andExpect(status().isNoContent());
+    }
 }
