@@ -1,7 +1,7 @@
 services:
   - type: web
     name: skillswap-backend
-    runtime: java
+    env: java
     buildCommand: ./mvnw clean package -DskipTests
     startCommand: java -jar target/SkillSwap-0.0.1-SNAPSHOT.jar
     plan: free
