@@ -1,0 +1,78 @@
+HELP.md
+target/
+out/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### Environment & Secrets ###
+.env
+.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*credentials*.json
+*secret*.json
+
+### Logs ###
+*.log
+logs/
+*.log.*
+
+### OS Files ###
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea/
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+### Crash & Profiler Dumps ###
+*.hprof
+hs_err_pid*
+replay_pid*
+
+### Editor Swaps ###
+*.swp
+*.swo
+*~
+
