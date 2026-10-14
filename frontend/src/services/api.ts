@@ -17,6 +17,20 @@ const rawBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').trim();
 const API_BASE_URL = rawBaseUrl.endsWith('/') ? rawBaseUrl.slice(0, -1) : rawBaseUrl;
 
 class ApiClient {
+  private getAuthHeader(): string | null {
+    if (typeof localStorage === 'undefined') return null;
+    return localStorage.getItem('skillswap_auth');
+  }
+
+  setAuthHeader(header: string | null) {
+    if (typeof localStorage === 'undefined') return;
+    if (header) {
+      localStorage.setItem('skillswap_auth', header);
+    } else {
+      localStorage.removeItem('skillswap_auth');
+    }
+  }
+
   private getCsrfTokenFromCookie(): string | null {
     if (typeof document === 'undefined') return null;
     const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]*)/);
@@ -31,6 +45,11 @@ class ApiClient {
       'X-Requested-With': 'XMLHttpRequest',
       ...(options.headers as Record<string, string>),
     };
+
+    const authHeader = this.getAuthHeader();
+    if (authHeader && !headers['Authorization']) {
+      headers['Authorization'] = authHeader;
+    }
 
     const csrfToken = this.getCsrfTokenFromCookie();
     if (csrfToken && options.method && !['GET', 'HEAD', 'OPTIONS'].includes(options.method.toUpperCase())) {
@@ -91,17 +110,29 @@ class ApiClient {
 
   // --- Auth Endpoints ---
   async register(data: { name: string; email: string; password: string }): Promise<UserResponse> {
-    return this.request<UserResponse>('/api/auth/register', {
+    const authHeader = 'Basic ' + btoa(`${data.email.trim().toLowerCase()}:${data.password}`);
+    const response = await this.request<UserResponse>('/api/auth/register', {
       method: 'POST',
+      headers: {
+        Authorization: authHeader,
+      },
       body: JSON.stringify(data),
     });
+    this.setAuthHeader(authHeader);
+    return response;
   }
 
   async login(data: { email: string; password: string }): Promise<LoginResponse> {
-    return this.request<LoginResponse>('/api/auth/login', {
+    const authHeader = 'Basic ' + btoa(`${data.email.trim().toLowerCase()}:${data.password}`);
+    const response = await this.request<LoginResponse>('/api/auth/login', {
       method: 'POST',
+      headers: {
+        Authorization: authHeader,
+      },
       body: JSON.stringify(data),
     });
+    this.setAuthHeader(authHeader);
+    return response;
   }
 
   async getCurrentUser(): Promise<UserResponse> {
@@ -109,9 +140,13 @@ class ApiClient {
   }
 
   async logout(): Promise<void> {
-    return this.request<void>('/api/auth/logout', {
-      method: 'POST',
-    });
+    try {
+      await this.request<void>('/api/auth/logout', {
+        method: 'POST',
+      });
+    } finally {
+      this.setAuthHeader(null);
+    }
   }
 
   // --- Skills Catalog ---

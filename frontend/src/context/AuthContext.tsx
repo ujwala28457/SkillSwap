@@ -35,6 +35,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // If 401 Unauthorized or network error, session is invalid
         setUser(null);
         localStorage.removeItem('skillswap_user');
+        localStorage.removeItem('skillswap_auth');
       } finally {
         setIsLoading(false);
       }
@@ -56,15 +57,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const trimmedName = name.trim();
     const trimmedEmail = email.trim().toLowerCase();
     const userResponse = await api.register({ name: trimmedName, email: trimmedEmail, password });
-    
-    try {
-      await login(trimmedEmail, password);
-    } catch (loginErr) {
-      // If separate login request failed but user was created, establish user state from register response
-      if (userResponse) {
-        localStorage.setItem('skillswap_user', JSON.stringify(userResponse));
-        setUser(userResponse);
-      }
+    if (userResponse) {
+      localStorage.setItem('skillswap_user', JSON.stringify(userResponse));
+      setUser(userResponse);
     }
   };
 
@@ -75,6 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.warn('Logout server request failed:', err);
     } finally {
       localStorage.removeItem('skillswap_user');
+      localStorage.removeItem('skillswap_auth');
       setUser(null);
     }
   };
