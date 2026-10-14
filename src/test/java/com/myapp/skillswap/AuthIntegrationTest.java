@@ -350,4 +350,25 @@ class AuthIntegrationTest {
         mockMvc.perform(post("/api/auth/logout").session((org.springframework.mock.web.MockHttpSession) session))
                 .andExpect(status().isNoContent());
     }
+
+    @Test
+    void testRegisterWithAuthorizationHeaderSucceeds() throws Exception {
+        String registerJson = """
+                {
+                    "name": "David Miller",
+                    "email": "david@example.com",
+                    "password": "securePassword123"
+                }
+                """;
+
+        mockMvc.perform(post("/api/auth/register")
+                        .header("Authorization", "Basic ZGF2aWRAZXhhbXBsZS5jb206c2VjdXJlUGFzc3dvcmQxMjM=")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registerJson))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").isNumber())
+                .andExpect(jsonPath("$.email").value("david@example.com"));
+
+        assertNotNull(userRepository.findByEmail("david@example.com").orElse(null));
+    }
 }

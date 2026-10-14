@@ -46,8 +46,9 @@ class ApiClient {
       ...(options.headers as Record<string, string>),
     };
 
+    const isPublicAuthEndpoint = cleanEndpoint.startsWith('/api/auth/register') || cleanEndpoint.startsWith('/api/auth/login');
     const authHeader = this.getAuthHeader();
-    if (authHeader && !headers['Authorization']) {
+    if (!isPublicAuthEndpoint && authHeader && !headers['Authorization']) {
       headers['Authorization'] = authHeader;
     }
 
@@ -110,26 +111,32 @@ class ApiClient {
 
   // --- Auth Endpoints ---
   async register(data: { name: string; email: string; password: string }): Promise<UserResponse> {
-    const authHeader = 'Basic ' + btoa(`${data.email.trim().toLowerCase()}:${data.password}`);
+    const trimmedEmail = data.email.trim().toLowerCase();
+    const trimmedName = data.name.trim();
+    const authHeader = 'Basic ' + btoa(`${trimmedEmail}:${data.password}`);
+    this.setAuthHeader(null);
     const response = await this.request<UserResponse>('/api/auth/register', {
       method: 'POST',
-      headers: {
-        Authorization: authHeader,
-      },
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        name: trimmedName,
+        email: trimmedEmail,
+        password: data.password,
+      }),
     });
     this.setAuthHeader(authHeader);
     return response;
   }
 
   async login(data: { email: string; password: string }): Promise<LoginResponse> {
-    const authHeader = 'Basic ' + btoa(`${data.email.trim().toLowerCase()}:${data.password}`);
+    const trimmedEmail = data.email.trim().toLowerCase();
+    const authHeader = 'Basic ' + btoa(`${trimmedEmail}:${data.password}`);
+    this.setAuthHeader(null);
     const response = await this.request<LoginResponse>('/api/auth/login', {
       method: 'POST',
-      headers: {
-        Authorization: authHeader,
-      },
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        email: trimmedEmail,
+        password: data.password,
+      }),
     });
     this.setAuthHeader(authHeader);
     return response;

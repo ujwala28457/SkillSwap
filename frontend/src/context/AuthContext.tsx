@@ -46,6 +46,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string) => {
     const trimmedEmail = email.trim().toLowerCase();
+    api.setAuthHeader(null);
+    localStorage.removeItem('skillswap_user');
     const response = await api.login({ email: trimmedEmail, password });
     
     // Store only non-sensitive user metadata in localStorage (no passwords or tokens)
@@ -56,6 +58,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (name: string, email: string, password: string) => {
     const trimmedName = name.trim();
     const trimmedEmail = email.trim().toLowerCase();
+    api.setAuthHeader(null);
+    localStorage.removeItem('skillswap_user');
     const userResponse = await api.register({ name: trimmedName, email: trimmedEmail, password });
     if (userResponse) {
       localStorage.setItem('skillswap_user', JSON.stringify(userResponse));
