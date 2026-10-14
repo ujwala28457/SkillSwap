@@ -13,7 +13,8 @@ import {
   UserSkillResponse,
 } from '../types/api';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const rawBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').trim();
+const API_BASE_URL = rawBaseUrl.endsWith('/') ? rawBaseUrl.slice(0, -1) : rawBaseUrl;
 
 class ApiClient {
   private getCsrfTokenFromCookie(): string | null {
@@ -23,7 +24,8 @@ class ApiClient {
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const url = `${API_BASE_URL}${endpoint}`;
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const url = `${API_BASE_URL}${cleanEndpoint}`;
     const headers: Record<string, string> = {
       Accept: 'application/json',
       'X-Requested-With': 'XMLHttpRequest',
@@ -39,11 +41,20 @@ class ApiClient {
       headers['Content-Type'] = 'application/json';
     }
 
-    const response = await fetch(url, {
-      ...options,
-      headers,
-      credentials: 'include', // Standard HttpOnly session cookie
-    });
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        ...options,
+        headers,
+        credentials: 'include', // Standard HttpOnly session cookie
+      });
+    } catch (networkErr: any) {
+      throw {
+        status: 0,
+        error: 'Network Error',
+        message: `Failed to connect to backend (${url || 'relative API'}). If the backend service is starting or idle on Render, please allow ~30 seconds for it to wake up and try again.`,
+      } as ApiError;
+    }
 
     if (response.status === 204) {
       return {} as T;
@@ -60,10 +71,15 @@ class ApiClient {
     }
 
     if (!response.ok) {
+      const isHtml = typeof data === 'string' && data.trim().startsWith('<');
+      const errorMessage = isHtml
+        ? `Backend returned ${response.status} ${response.statusText} (${url}). Please verify that VITE_API_BASE_URL points to the correct Render service URL.`
+        : (data?.message || data?.error || (typeof data === 'string' ? data : 'An unexpected error occurred'));
+
       const error: ApiError = {
         status: response.status,
         error: response.statusText,
-        message: data?.message || data?.error || (typeof data === 'string' ? data : 'An unexpected error occurred'),
+        message: errorMessage,
         validationErrors: data?.validationErrors,
         timestamp: data?.timestamp,
       };

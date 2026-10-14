@@ -54,7 +54,15 @@ public class SecurityConfig {
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.toList());
-        configuration.setAllowedOrigins(origins);
+
+        List<String> patterns = new java.util.ArrayList<>(origins);
+        patterns.add("https://*.vercel.app");
+        patterns.add("https://vercel.app");
+        patterns.add("https://*.onrender.com");
+        patterns.add("http://localhost:[*]");
+        patterns.add("http://127.0.0.1:[*]");
+
+        configuration.setAllowedOriginPatterns(patterns);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "X-Requested-With", "Origin", "X-XSRF-TOKEN"));
         configuration.setExposedHeaders(List.of("Authorization", "X-XSRF-TOKEN"));

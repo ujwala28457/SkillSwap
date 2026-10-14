@@ -55,9 +55,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (name: string, email: string, password: string) => {
     const trimmedName = name.trim();
     const trimmedEmail = email.trim().toLowerCase();
-    await api.register({ name: trimmedName, email: trimmedEmail, password });
-    // After registration, establish authenticated session
-    await login(trimmedEmail, password);
+    const userResponse = await api.register({ name: trimmedName, email: trimmedEmail, password });
+    
+    try {
+      await login(trimmedEmail, password);
+    } catch (loginErr) {
+      // If separate login request failed but user was created, establish user state from register response
+      if (userResponse) {
+        localStorage.setItem('skillswap_user', JSON.stringify(userResponse));
+        setUser(userResponse);
+      }
+    }
   };
 
   const logout = async () => {

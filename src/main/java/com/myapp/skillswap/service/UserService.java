@@ -41,7 +41,7 @@ public class UserService {
         this.securityContextRepository = securityContextRepository;
     }
 
-    public UserResponse register(RegisterRequest request) {
+    public UserResponse register(RegisterRequest request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
         String normalizedEmail = normalizeEmail(request.getEmail());
         if (userRepository.existsByEmail(normalizedEmail)) {
             throw new DuplicateEmailException("Email is already registered: " + normalizedEmail);
@@ -53,7 +53,26 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
         User savedUser = userRepository.save(user);
+
+        if (httpRequest != null && httpResponse != null && securityContextRepository != null) {
+            try {
+                Authentication authentication = authenticationManager.authenticate(
+                        new UsernamePasswordAuthenticationToken(normalizedEmail, request.getPassword())
+                );
+                SecurityContext context = SecurityContextHolder.createEmptyContext();
+                context.setAuthentication(authentication);
+                SecurityContextHolder.setContext(context);
+                securityContextRepository.saveContext(context, httpRequest, httpResponse);
+            } catch (Exception e) {
+                // User is saved; if authentication manager throws, the user still exists
+            }
+        }
+
         return mapToResponse(savedUser);
+    }
+
+    public UserResponse register(RegisterRequest request) {
+        return register(request, null, null);
     }
 
     public LoginResponse login(LoginRequest request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
